@@ -2,17 +2,17 @@
 """
 ml_finder - Descobre perfis de vendedor do Mercado Livre vinculados a sites.
 
-Dado uma lista de URLs de lojas "próprias" (fora de marketplace), o script
-visita a página inicial e algumas páginas internas relevantes (contato, sobre,
-onde comprar...) e procura por links/menções ao Mercado Livre:
+Dado uma lista de URLs de lojas "proprias" (fora de marketplace), o script
+visita a pagina inicial e algumas paginas internas relevantes (contato, sobre,
+onde comprar...) e procura por links/mencoes ao Mercado Livre:
 
   * perfil de vendedor      perfil.mercadolivre.com.br/NICK
   * loja oficial            loja.mercadolivre.com.br/NOME  |  mercadolivre.com.br/loja/NOME
-  * página da marca         mercadolivre.com.br/pagina/NOME
+  * pagina da marca         mercadolivre.com.br/pagina/NOME
   * listagem do vendedor    lista.mercadolivre.com.br/_CustId_123
-  * anúncio/produto         produto.mercadolivre.com.br/MLB-123...  |  .../p/MLB123
+  * anuncio/produto         produto.mercadolivre.com.br/MLB-123...  |  .../p/MLB123
   * link curto              mercadolivre.com/sec/XXXX  (resolvido com --resolve)
-  * menção em texto         "Mercado Livre" sem link (sinal fraco)
+  * mencao em texto         "Mercado Livre" sem link (sinal fraco)
 
 Uso:
     python ml_finder.py https://loja1.com.br https://loja2.com.br
@@ -41,7 +41,7 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 
-# Palavras que indicam páginas internas onde costuma haver link para marketplace.
+# Palavras que indicam paginas internas onde costuma haver link para marketplace.
 INTERNAL_KEYWORDS = (
     "contato", "contact", "fale-conosco", "faleconosco", "sobre", "about",
     "quem-somos", "quemsomos", "institucional", "onde-comprar", "ondecomprar",
@@ -49,7 +49,7 @@ INTERNAL_KEYWORDS = (
     "atendimento", "sac",
 )
 
-# Qualquer domínio do Mercado Livre / Mercado Libre.
+# Qualquer dominio do Mercado Livre / Mercado Libre.
 ML_URL_RE = re.compile(
     r"""(?:https?:)?//(?:[a-z0-9-]+\.)*mercado(?:livre|libre)\.com(?:\.[a-z]{2})?"""
     r"""(?:/[^\s"'<>()\\]*)?""",
@@ -57,7 +57,7 @@ ML_URL_RE = re.compile(
 )
 ML_MENTION_RE = re.compile(r"mercado\s*(?:livre|libre)", re.IGNORECASE)
 
-# Ordem importa: do mais específico para o mais genérico.
+# Ordem importa: do mais especifico para o mais generico.
 PATTERNS: list[tuple[str, re.Pattern]] = [
     ("perfil", re.compile(r"//perfil\.mercado(?:livre|libre)\.[a-z.]+/([^/?#]+)", re.I)),
     ("perfil", re.compile(r"mercado(?:livre|libre)\.[a-z.]+/perfil/([^/?#]+)", re.I)),
@@ -70,7 +70,7 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
     ("link_curto", re.compile(r"mercado(?:livre|libre)\.com(?:\.[a-z]{2})?/sec/([A-Za-z0-9]+)", re.I)),
 ]
 
-# Links genéricos que não dizem nada sobre o vendedor.
+# Links genericos que nao dizem nada sobre o vendedor.
 IGNORED_PATHS = re.compile(
     r"^/?(?:$|ajuda|help|privacidade|privacy|termos|terms|blog|developers|"
     r"navigation|jms|gz|org-img|static|favicon)",
@@ -86,7 +86,7 @@ class Finding:
     identificador: str
     url: str
     encontrado_em: str
-    vendedor: str = ""  # preenchido quando conseguimos resolver anúncio/link curto
+    vendedor: str = ""  # preenchido quando conseguimos resolver anuncio/link curto
 
 
 @dataclass
@@ -100,7 +100,7 @@ class SiteResult:
     erro: str = ""
 
     def perfis(self) -> list[str]:
-        """Identificadores únicos de vendedor/loja encontrados."""
+        """Identificadores unicos de vendedor/loja encontrados."""
         seen: dict[str, None] = {}
         for f in self.achados:
             if f.tipo in STRONG:
@@ -111,7 +111,7 @@ class SiteResult:
 
 
 class _LinkParser(HTMLParser):
-    """Coleta hrefs e texto de âncoras de uma página."""
+    """Coleta hrefs e texto de ancoras de uma pagina."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -254,7 +254,7 @@ class Finder:
         return result
 
     def _resolve_findings(self, result: SiteResult) -> None:
-        """Segue links curtos/anúncios para tentar descobrir o vendedor."""
+        """Segue links curtos/anuncios para tentar descobrir o vendedor."""
         for f in result.achados:
             if f.tipo not in ("link_curto", "anuncio", "outro"):
                 continue
@@ -282,7 +282,7 @@ class Finder:
 
 
 def seller_from_ml_page(html: str) -> str:
-    """Tenta extrair o vendedor do HTML de um anúncio do ML (melhor esforço)."""
+    """Tenta extrair o vendedor do HTML de um anuncio do ML (melhor esforco)."""
     text = unescape(html).replace("\\/", "/")
     for link in extract_ml_links(text):
         c = classify_ml_url(link)
@@ -297,7 +297,7 @@ def seller_from_ml_page(html: str) -> str:
 def read_urls(args) -> list[str]:
     urls = list(args.urls)
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
+        with open(args.file, encoding="utf-8-sig", errors="replace") as fh:
             for line in fh:
                 line = line.strip().split(",")[0].strip()
                 if line and not line.startswith("#") and line.lower() not in ("url", "site"):
@@ -329,11 +329,11 @@ def write_json(results: list[SiteResult], path: str) -> None:
 
 
 def print_summary(r: SiteResult) -> None:
-    icon = {"alta": "✅", "media": "🟡", "baixa": "⚪", "nenhuma": "❌"}.get(r.confianca, "❌")
+    icon = {"alta": "[OK]   ", "media": "[?]    ", "baixa": "[fraco]", "nenhuma": "[--]   "}.get(r.confianca, "[--]   ")
     if r.status == "erro":
-        print(f"⚠️  {r.site}  ->  erro: {r.erro}")
+        print(f"[ERRO] {r.site}  ->  erro: {r.erro}")
         return
-    print(f"{icon} {r.site}  ->  confiança {r.confianca}")
+    print(f"{icon} {r.site}  ->  confianca {r.confianca}")
     for f in r.achados:
         extra = f"  [vendedor: {f.vendedor}]" if f.vendedor else ""
         print(f"     - {f.tipo}: {f.identificador}  ({f.url}){extra}")
@@ -347,11 +347,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-f", "--file", help="arquivo .txt/.csv com uma URL por linha")
     ap.add_argument("--csv", help="salvar resultado em CSV")
     ap.add_argument("--json", help="salvar resultado em JSON")
-    ap.add_argument("--max-pages", type=int, default=5, help="páginas por site (padrão 5)")
-    ap.add_argument("--timeout", type=float, default=15, help="timeout por requisição (s)")
+    ap.add_argument("--max-pages", type=int, default=5, help="paginas por site (padrao 5)")
+    ap.add_argument("--timeout", type=float, default=15, help="timeout por requisicao (s)")
     ap.add_argument("--workers", type=int, default=5, help="sites analisados em paralelo")
     ap.add_argument("--resolve", action="store_true",
-                    help="seguir links curtos/anúncios do ML para descobrir o vendedor")
+                    help="seguir links curtos/anuncios do ML para descobrir o vendedor")
     args = ap.parse_args(argv)
 
     urls = read_urls(args)
@@ -374,7 +374,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"JSON salvo em {args.json}")
 
     com_perfil = sum(1 for r in results if r.confianca == "alta")
-    print(f"\n{len(results)} sites analisados em {time.time() - start:.1f}s — "
+    print(f"\n{len(results)} sites analisados em {time.time() - start:.1f}s - "
           f"{com_perfil} com perfil ML identificado.")
     return 0
 
