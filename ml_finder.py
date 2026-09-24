@@ -35,7 +35,13 @@ from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import unquote, urljoin, urlparse
 
-import requests
+try:
+    import requests
+except ImportError:  # biblioteca ausente: tenta instalar sozinho
+    import subprocess
+    print("Instalando a biblioteca 'requests'...")
+    subprocess.call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -399,4 +405,18 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        code = main()
+    except SystemExit as exc:
+        code = exc.code
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        code = 1
+    # Aberto com duplo clique: mantem a janela aberta para ler o resultado/erro.
+    if len(sys.argv) == 1 and code not in (0, None):
+        try:
+            input("\nPressione Enter para fechar...")
+        except EOFError:
+            pass
+    sys.exit(code)
