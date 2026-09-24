@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import sys
 import time
@@ -354,9 +355,25 @@ def main(argv: list[str] | None = None) -> int:
                     help="seguir links curtos/anuncios do ML para descobrir o vendedor")
     args = ap.parse_args(argv)
 
+    # Sem argumentos (ex.: duplo clique): usa url.txt ao lado do script
+    # e salva resultado.csv automaticamente.
+    auto = not args.urls and not args.file
+    if auto:
+        here = os.path.dirname(os.path.abspath(__file__))
+        for name in ("url.txt", "urls.txt", "url", "urls"):
+            candidate = os.path.join(here, name)
+            if os.path.isfile(candidate):
+                args.file = candidate
+                break
+        if args.file and not args.csv:
+            args.csv = os.path.join(here, "resultado.csv")
+        if args.file:
+            print(f"Lendo URLs de {args.file}\n")
+
     urls = read_urls(args)
     if not urls:
-        ap.error("informe ao menos uma URL (argumento, -f arquivo ou stdin)")
+        ap.error("informe ao menos uma URL (argumento, -f arquivo ou stdin) "
+                 "ou coloque um url.txt na mesma pasta do script")
 
     finder = Finder(timeout=args.timeout, max_pages=max(1, args.max_pages), resolve=args.resolve)
     start = time.time()
@@ -376,6 +393,8 @@ def main(argv: list[str] | None = None) -> int:
     com_perfil = sum(1 for r in results if r.confianca == "alta")
     print(f"\n{len(results)} sites analisados em {time.time() - start:.1f}s - "
           f"{com_perfil} com perfil ML identificado.")
+    if auto and sys.stdin.isatty():
+        input("\nPressione Enter para fechar...")
     return 0
 
 
